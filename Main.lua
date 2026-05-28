@@ -1,51 +1,45 @@
---// BlockSpin Pro - Ultimate Edition V3
+--// BlockSpin Pro - Final Combined Edition
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
-getgenv().Silent = false
-getgenv().ESP = false
-getgenv().Tracer = false
-getgenv().FovCircle = false
-getgenv().FovRadius = 500
+--// 1. نظام الحماية المطور (يتحقق من key-511)
+local KeyURL = "https://raw.githubusercontent.com/asd798072-max/key.txt/refs/heads/main/key.txt"
+local RequiredKey = "key-511"
 
-local ESP_Drawings = {}
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-FOVCircle.Radius = getgenv().FovRadius
-FOVCircle.Visible = false
-FOVCircle.Color = Color3.fromRGB(255, 255, 255)
-FOVCircle.Filled = false
-FOVCircle.Thickness = 2
+local success, response = pcall(function() return game:HttpGet(KeyURL) end)
+local cleanResponse = string.gsub(response or "", "%s+", "")
 
-local Tracer = Drawing.new("Line")
-Tracer.Visible = false
-Tracer.Color = Color3.fromRGB(255, 255, 255)
-Tracer.Thickness = 1
-
-local ScreenGui = Instance.new("ScreenGui", CoreGui)
-local MainFrame = Instance.new("Frame", ScreenGui); MainFrame.Size = UDim2.new(0, 200, 0, 300); MainFrame.Position = UDim2.new(0.5, -100, 0.5, -150); MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); MainFrame.Visible = false
-
-local function CreateBtn(name, callback)
-    local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(1, 0, 0, 40); btn.Position = UDim2.new(0, 0, 0, #MainFrame:GetChildren() * 45)
-    btn.Text = name; btn.MouseButton1Click:Connect(function() callback(btn) end)
+if not (success and string.find(cleanResponse, RequiredKey)) then
+    LocalPlayer:Kick("Key Error: Access Denied! الرمز غير صحيح.")
+    return
 end
 
-CreateBtn("Silent: OFF", function(btn) getgenv().Silent = not getgenv().Silent; btn.Text = "Silent: " .. (getgenv().Silent and "ON" or "OFF") end)
-CreateBtn("ESP: OFF", function(btn) getgenv().ESP = not getgenv().ESP; btn.Text = "ESP: " .. (getgenv().ESP and "ON" or "OFF") end)
-CreateBtn("Tracer: OFF", function(btn) getgenv().Tracer = not getgenv().Tracer; btn.Text = "Tracer: " .. (getgenv().Tracer and "ON" or "OFF") end)
-CreateBtn("FOV Circle: OFF", function(btn) getgenv().FovCircle = not getgenv().FovCircle; btn.Text = "FOV: " .. (getgenv().FovCircle and "ON" or "OFF"); FOVCircle.Visible = getgenv().FovCircle end)
-CreateBtn("FOV Size +50", function() getgenv().FovRadius = (getgenv().FovRadius >= 500 and 50 or getgenv().FovRadius + 50); FOVCircle.Radius = getgenv().FovRadius end)
+--// 2. إعدادات السكربت
+getgenv().Settings = { Silent = false, Tracer = false, FovCircle = false, FovRadius = 150, Prediction = 0.16 }
 
-local MenuBtn = Instance.new("ImageButton", ScreenGui); MenuBtn.Size = UDim2.new(0, 60, 0, 60); MenuBtn.Position = UDim2.new(0, 20, 0, 20); MenuBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0); MenuBtn.Draggable = true
-Instance.new("UICorner", MenuBtn).CornerRadius = UDim.new(1, 0)
+--// 3. الواجهة (UI)
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui); MainFrame.Size = UDim2.new(0, 200, 0, 250); MainFrame.Position = UDim2.new(0.5, -100, 0.5, -125); MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); MainFrame.Visible = false; MainFrame.Draggable = true
+
+local function CreateBtn(name, setting)
+    local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(1, 0, 0, 40); btn.Position = UDim2.new(0, 0, 0, #MainFrame:GetChildren() * 45)
+    btn.Text = name .. ": OFF"; btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); btn.TextColor3 = Color3.new(1,1,1)
+    btn.MouseButton1Click:Connect(function()
+        getgenv().Settings[setting] = not getgenv().Settings[setting]
+        btn.Text = name .. ": " .. (getgenv().Settings[setting] and "ON" or "OFF")
+    end)
+end
+CreateBtn("Silent", "Silent"); CreateBtn("Tracer", "Tracer"); CreateBtn("FOV Circle", "FovCircle")
+
+local MenuBtn = Instance.new("ImageButton", ScreenGui); MenuBtn.Size = UDim2.new(0, 60, 0, 60); MenuBtn.Position = UDim2.new(0, 20, 0, 20); MenuBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0); MenuBtn.Draggable = true; Instance.new("UICorner", MenuBtn).CornerRadius = UDim.new(1, 0)
 MenuBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
-local function GetClosest()
-    local Target, MinDist = nil, getgenv().FovRadius
+--// 4. المحرك القاتل (Silent Aim Engine)
+local function GetTarget()
+    local Target, MinDist = nil, getgenv().Settings.FovRadius
     local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
     for _, v in pairs(Players:GetPlayers()) do
         if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
@@ -57,32 +51,28 @@ local function GetClosest()
     return Target
 end
 
-local MT = getrawmetatable(game); setreadonly(MT, false); local Old = MT.__index
-MT.__index = newcclosure(function(self, k)
-    if getgenv().Silent and k == "Hit" then
-        local Target = GetClosest()
-        if Target then return Target.CFrame end
+local Hook; Hook = hookmetamethod(game, "__namecall", function(self, ...)
+    local Args = {...}
+    if getgenv().Settings.Silent and getnamecallmethod() == "FireServer" then
+        local Target = GetTarget()
+        if Target then
+            Args[1] = Target.Position + (Target.Velocity * getgenv().Settings.Prediction)
+            return self.FireServer(self, unpack(Args))
+        end
     end
-    return Old(self, k)
+    return Hook(self, ...)
 end)
+
+--// 5. الرسم (Tracer & FOV)
+local FOVCircle = Drawing.new("Circle"); FOVCircle.Radius = getgenv().Settings.FovRadius; FOVCircle.Filled = false; FOVCircle.Thickness = 2; FOVCircle.Visible = false
+local TracerLine = Drawing.new("Line"); TracerLine.Thickness = 1; TracerLine.Visible = false
 
 RunService.RenderStepped:Connect(function()
     FOVCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-    local Target = GetClosest()
-    Tracer.Visible = (Target and getgenv().Tracer)
-    if Target and getgenv().Tracer then
-        Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
-        Tracer.To = Vector2.new(Camera:WorldToViewportPoint(Target.Position).X, Camera:WorldToViewportPoint(Target.Position).Y)
-    end
-    for _, d in pairs(ESP_Drawings) do d:Remove() end; ESP_Drawings = {}
-    if getgenv().ESP then
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                local Pos, Vis = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
-                if Vis and (Vector2.new(Mouse.X, Mouse.Y) - Vector2.new(Pos.X, Pos.Y)).Magnitude < getgenv().FovRadius then
-                    local Line = Drawing.new("Line"); Line.Visible = true; Line.Color = Color3.new(0, 1, 0); Line.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2); Line.To = Vector2.new(Pos.X, Pos.Y); table.insert(ESP_Drawings, Line)
-                end
-            end
-        end
-    end
+    FOVCircle.Visible = getgenv().Settings.FovCircle
+    local Target = GetTarget()
+    if getgenv().Settings.Tracer and Target then
+        TracerLine.Visible = true; TracerLine.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+        TracerLine.To = Vector2.new(Camera:WorldToViewportPoint(Target.Position).X, Camera:WorldToViewportPoint(Target.Position).Y)
+    else TracerLine.Visible = false end
 end)
