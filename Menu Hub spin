@@ -1,24 +1,14 @@
---// BlockSpin Pro - Final Advanced Edition
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
-local MySecretKey = "r_ij511" 
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "BP_Core"
-
-local function AntiTamper()
-    while task.wait(1) do
-        if not ScreenGui or ScreenGui.Parent ~= CoreGui then while true do end end
-    end
-end
-task.spawn(AntiTamper)
-
-local KeyFrame = Instance.new("Frame", ScreenGui); KeyFrame.Size = UDim2.new(0, 250, 0, 200); KeyFrame.Position = UDim2.new(0.5, -125, 0.5, -100); KeyFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-local KeyInput = Instance.new("TextBox", KeyFrame); KeyInput.Size = UDim2.new(0.8, 0, 0, 40); KeyInput.Position = UDim2.new(0.1, 0, 0.1, 0); KeyInput.PlaceholderText = "Enter Key..."; KeyInput.Text = ""
+local KeyFrame = Instance.new("Frame", ScreenGui); KeyFrame.Size = UDim2.new(0, 250, 0, 200); KeyFrame.Position = UDim2.new(0.5, -125, 0.5, -100); KeyFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30); KeyFrame.Visible = true
+local KeyInput = Instance.new("TextBox", KeyFrame); KeyInput.Size = UDim2.new(0.8, 0, 0, 40); KeyInput.Position = UDim2.new(0.1, 0, 0.1, 0); KeyInput.PlaceholderText = "Key..."; KeyInput.Text = ""
 local SubmitBtn = Instance.new("TextButton", KeyFrame); SubmitBtn.Size = UDim2.new(0.8, 0, 0, 40); SubmitBtn.Position = UDim2.new(0.1, 0, 0.4, 0); SubmitBtn.Text = "Submit"; SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0); SubmitBtn.TextColor3 = Color3.new(1,1,1)
+
 local GetKeyBtn = Instance.new("TextButton", KeyFrame); GetKeyBtn.Size = UDim2.new(0.8, 0, 0, 40); GetKeyBtn.Position = UDim2.new(0.1, 0, 0.7, 0); GetKeyBtn.Text = "Get Key"; GetKeyBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 150); GetKeyBtn.TextColor3 = Color3.new(1,1,1)
 
 GetKeyBtn.MouseButton1Click:Connect(function()
@@ -29,37 +19,89 @@ GetKeyBtn.MouseButton1Click:Connect(function()
 end)
 
 local MainFrame = Instance.new("Frame", ScreenGui); MainFrame.Size = UDim2.new(0, 200, 0, 250); MainFrame.Position = UDim2.new(1, -220, 0.5, -125); MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); MainFrame.Visible = false; MainFrame.Draggable = true
-local MenuBtn = Instance.new("ImageButton", ScreenGui); MenuBtn.Size = UDim2.new(0, 60, 0, 60); MenuBtn.Position = UDim2.new(1, -80, 0, 20); MenuBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0); MenuBtn.Draggable = true; MenuBtn.Visible = false
+local MenuBtn = Instance.new("ImageButton", ScreenGui); MenuBtn.Size = UDim2.new(0, 60, 0, 60); MenuBtn.Position = UDim2.new(1, -80, 0, 20); MenuBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0); MenuBtn.Draggable = true; Instance.new("UICorner", MenuBtn).CornerRadius = UDim.new(1, 0); MenuBtn.Visible = false
 
-local function StartScript()
-    getgenv().Settings = { Silent = false, Tracer = false, FovCircle = false, FovRadius = 150, Prediction = 0.165, KillCheck = true }
-    local Count = 0
-    local function CreateBtn(name, setting)
-        local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(1, 0, 0, 40); btn.Position = UDim2.new(0, 0, 0, Count * 45)
-        btn.Text = name .. ": OFF"; btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); btn.TextColor3 = Color3.new(1,1,1)
-        btn.MouseButton1Click:Connect(function()
-            getgenv().Settings[setting] = not getgenv().Settings[setting]
-            btn.Text = name .. ": " .. (getgenv().Settings[setting] and "ON" or "OFF")
-        end)
-        Count = Count + 1
-    end
-    CreateBtn("Silent", "Silent"); CreateBtn("Tracer", "Tracer"); CreateBtn("FOV Circle", "FovCircle"); CreateBtn("Kill Check", "KillCheck")
+local MySecretKey = "r_ij511"
+SubmitBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == MySecretKey then KeyFrame.Visible = false; MainFrame.Visible = true; MenuBtn.Visible = true
+    else SubmitBtn.Text = "Wrong Key!"; task.wait(1); SubmitBtn.Text = "Submit" end
+end)
+MenuBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
 
-    local Hook; Hook = hookmetamethod(game, "__namecall", function(self, ...)
-        local Args = {...}
-        if getgenv().Settings.Silent and getnamecallmethod() == "FireServer" then
-            local Target = nil 
-            if Target then Args[1] = Target.Position; return self.FireServer(self, unpack(Args)) end
-        end
-        return Hook(self, ...)
+getgenv().Settings = { Silent = false, Tracer = false, FovCircle = false, FovRadius = 150, Prediction = 0.165, KillCheck = true }
+
+local Count = 0
+local function CreateBtn(name, setting)
+    local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(1, 0, 0, 40); btn.Position = UDim2.new(0, 0, 0, Count * 45)
+    btn.Text = name .. ": OFF"; btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); btn.TextColor3 = Color3.new(1,1,1)
+    btn.MouseButton1Click:Connect(function()
+        getgenv().Settings[setting] = not getgenv().Settings[setting]
+        btn.Text = name .. ": " .. (getgenv().Settings[setting] and "ON" or "OFF")
     end)
+    Count = Count + 1
+end
+CreateBtn("Silent", "Silent"); CreateBtn("Tracer", "Tracer"); CreateBtn("FOV Circle", "FovCircle"); CreateBtn("Kill Check", "KillCheck")
+
+local FovBtn = Instance.new("TextButton", MainFrame); FovBtn.Size = UDim2.new(1, 0, 0, 40); FovBtn.Position = UDim2.new(0, 0, 0, Count * 45); FovBtn.Text = "FOV Size: 150"; FovBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+FovBtn.MouseButton1Click:Connect(function()
+    getgenv().Settings.FovRadius = getgenv().Settings.FovRadius + 50
+    if getgenv().Settings.FovRadius > 500 then getgenv().Settings.FovRadius = 50 end
+    FovBtn.Text = "FOV Size: " .. getgenv().Settings.FovRadius
+end)
+
+local function IsVisible(targetPart)
+    local ray = Ray.new(Camera.CFrame.Position, targetPart.Position - Camera.CFrame.Position)
+    local hit = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, workspace.CurrentCamera})
+    return hit and hit:IsDescendantOf(targetPart.Parent) or false
 end
 
-SubmitBtn.MouseButton1Click:Connect(function()
-    if KeyInput.Text == MySecretKey then 
-        KeyFrame.Visible = false; MainFrame.Visible = true; MenuBtn.Visible = true
-        StartScript()
-    else 
-        SubmitBtn.Text = "Wrong Key!"; task.wait(1); SubmitBtn.Text = "Submit" 
+local function GetDynamicPrediction(target)
+    local magnitude = (target.Position - Camera.CFrame.Position).Magnitude
+    return getgenv().Settings.Prediction + (magnitude / 1000)
+end
+
+local function GetValidTarget()
+    local Target, MinDist = nil, getgenv().Settings.FovRadius
+    local Center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            if getgenv().Settings.KillCheck and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health <= 0 then continue end
+            if not IsVisible(v.Character.HumanoidRootPart) then continue end
+            local Pos, OnScreen = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position)
+            local Dist = (Center - Vector2.new(Pos.X, Pos.Y)).Magnitude
+            if OnScreen and Dist < MinDist then MinDist = Dist; Target = v.Character.HumanoidRootPart end
+        end
     end
+    return Target
+end
+
+local Hook; Hook = hookmetamethod(game, "__namecall", function(self, ...)
+    local Args = {...}
+    if getgenv().Settings.Silent and getnamecallmethod() == "FireServer" then
+        local Target = GetValidTarget()
+        if Target then
+            local DynamicPred = GetDynamicPrediction(Target)
+            Args[1] = Target.Position + (Target.Velocity * DynamicPred)
+            return self.FireServer(self, unpack(Args))
+        end
+    end
+    return Hook(self, ...)
+end)
+
+local FOVCircle = Drawing.new("Circle"); FOVCircle.Filled = false; FOVCircle.Thickness = 2
+local TracerLine = Drawing.new("Line"); TracerLine.Thickness = 3
+
+RunService.RenderStepped:Connect(function()
+    FOVCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    FOVCircle.Radius = getgenv().Settings.FovRadius
+    FOVCircle.Visible = getgenv().Settings.FovCircle
+    
+    local Target = GetValidTarget()
+    if getgenv().Settings.Tracer and Target then
+        local DynamicPred = GetDynamicPrediction(Target)
+        local Pos, OnScreen = Camera:WorldToViewportPoint(Target.Position + (Target.Velocity * DynamicPred))
+        TracerLine.Visible = true
+        TracerLine.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+        TracerLine.To = Vector2.new(Pos.X, Pos.Y)
+    else TracerLine.Visible = false end
 end)
