@@ -1,0 +1,65 @@
+--// BlockSpin Pro - Final Advanced Edition
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local MySecretKey = "r_ij511" 
+local ScreenGui = Instance.new("ScreenGui", CoreGui)
+ScreenGui.Name = "BP_Core"
+
+local function AntiTamper()
+    while task.wait(1) do
+        if not ScreenGui or ScreenGui.Parent ~= CoreGui then while true do end end
+    end
+end
+task.spawn(AntiTamper)
+
+local KeyFrame = Instance.new("Frame", ScreenGui); KeyFrame.Size = UDim2.new(0, 250, 0, 200); KeyFrame.Position = UDim2.new(0.5, -125, 0.5, -100); KeyFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+local KeyInput = Instance.new("TextBox", KeyFrame); KeyInput.Size = UDim2.new(0.8, 0, 0, 40); KeyInput.Position = UDim2.new(0.1, 0, 0.1, 0); KeyInput.PlaceholderText = "Enter Key..."; KeyInput.Text = ""
+local SubmitBtn = Instance.new("TextButton", KeyFrame); SubmitBtn.Size = UDim2.new(0.8, 0, 0, 40); SubmitBtn.Position = UDim2.new(0.1, 0, 0.4, 0); SubmitBtn.Text = "Submit"; SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0); SubmitBtn.TextColor3 = Color3.new(1,1,1)
+local GetKeyBtn = Instance.new("TextButton", KeyFrame); GetKeyBtn.Size = UDim2.new(0.8, 0, 0, 40); GetKeyBtn.Position = UDim2.new(0.1, 0, 0.7, 0); GetKeyBtn.Text = "Get Key"; GetKeyBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 150); GetKeyBtn.TextColor3 = Color3.new(1,1,1)
+
+GetKeyBtn.MouseButton1Click:Connect(function()
+    setclipboard("https://link-target.net/6100670/cVVVo2qFVuxy")
+    GetKeyBtn.Text = "Copied!"
+    task.wait(2)
+    GetKeyBtn.Text = "Get Key"
+end)
+
+local MainFrame = Instance.new("Frame", ScreenGui); MainFrame.Size = UDim2.new(0, 200, 0, 250); MainFrame.Position = UDim2.new(1, -220, 0.5, -125); MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); MainFrame.Visible = false; MainFrame.Draggable = true
+local MenuBtn = Instance.new("ImageButton", ScreenGui); MenuBtn.Size = UDim2.new(0, 60, 0, 60); MenuBtn.Position = UDim2.new(1, -80, 0, 20); MenuBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0); MenuBtn.Draggable = true; MenuBtn.Visible = false
+
+local function StartScript()
+    getgenv().Settings = { Silent = false, Tracer = false, FovCircle = false, FovRadius = 150, Prediction = 0.165, KillCheck = true }
+    local Count = 0
+    local function CreateBtn(name, setting)
+        local btn = Instance.new("TextButton", MainFrame); btn.Size = UDim2.new(1, 0, 0, 40); btn.Position = UDim2.new(0, 0, 0, Count * 45)
+        btn.Text = name .. ": OFF"; btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); btn.TextColor3 = Color3.new(1,1,1)
+        btn.MouseButton1Click:Connect(function()
+            getgenv().Settings[setting] = not getgenv().Settings[setting]
+            btn.Text = name .. ": " .. (getgenv().Settings[setting] and "ON" or "OFF")
+        end)
+        Count = Count + 1
+    end
+    CreateBtn("Silent", "Silent"); CreateBtn("Tracer", "Tracer"); CreateBtn("FOV Circle", "FovCircle"); CreateBtn("Kill Check", "KillCheck")
+
+    local Hook; Hook = hookmetamethod(game, "__namecall", function(self, ...)
+        local Args = {...}
+        if getgenv().Settings.Silent and getnamecallmethod() == "FireServer" then
+            local Target = nil 
+            if Target then Args[1] = Target.Position; return self.FireServer(self, unpack(Args)) end
+        end
+        return Hook(self, ...)
+    end)
+end
+
+SubmitBtn.MouseButton1Click:Connect(function()
+    if KeyInput.Text == MySecretKey then 
+        KeyFrame.Visible = false; MainFrame.Visible = true; MenuBtn.Visible = true
+        StartScript()
+    else 
+        SubmitBtn.Text = "Wrong Key!"; task.wait(1); SubmitBtn.Text = "Submit" 
+    end
+end)
